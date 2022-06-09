@@ -121,7 +121,7 @@ static void uartTask0(void *pvParameters) {
             bzero(dtmp, UART_BUFFER_SIZE);
             switch(event.type) {
                 case UART_DATA:
-                    ESP_LOGI("Uart Task", "uart%d data", uart->uartNum);
+                    //ESP_LOGI("Uart Task", "uart%d data", uart->uartNum);
                     uart_read_bytes(uart->uartNum, dtmp, event.size, portMAX_DELAY);
 
                     // Todo
@@ -174,7 +174,7 @@ static void uartTask1(void *pvParameters) {
             bzero(dtmp, UART_BUFFER_SIZE);
             switch(event.type) {
                 case UART_DATA:
-                    ESP_LOGI("Uart Task", "uart%d data", uart->uartNum);
+                    //ESP_LOGI("Uart Task", "uart%d data", uart->uartNum);
                     uart_read_bytes(uart->uartNum, dtmp, event.size, portMAX_DELAY);
                     uart_write_bytes(uart->uartNum, (const char*) dtmp, event.size);
                     break;
@@ -223,7 +223,7 @@ static void uartTask2(void *pvParameters) {
             bzero(dtmp, UART_BUFFER_SIZE);
             switch(event.type) {
                 case UART_DATA:
-                    ESP_LOGI("Uart Task", "uart%d data", uart->uartNum);
+                    //ESP_LOGI("Uart Task", "uart%d data", uart->uartNum);
                     uart_read_bytes(uart->uartNum, dtmp, event.size, portMAX_DELAY);
                     uart_write_bytes(uart->uartNum, (const char*) dtmp, event.size);
                     break;
