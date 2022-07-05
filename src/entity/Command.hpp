@@ -50,6 +50,8 @@ namespace ATE
 
     // <获取系统信息>请求结构体
     struct REQUEST_BODY_INFO : public REQUEST_BODY_BASIC {
+        int chn;
+        int mcu;
         REQUEST_BODY_INFO() {
             key = REQUEST_KEY::REQUEST_KEY_INFO;
         }
@@ -123,6 +125,8 @@ namespace ATE
     public:
         Command(/* args */);
         ~Command();
+
+        static bool isJson(const char* json);
 
         // 基本请求Json解析结构体
         bool parseBasic(const char* json, REQUEST_BODY_BASIC* basic);
