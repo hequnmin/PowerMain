@@ -10,6 +10,17 @@ namespace ATE
     {
     }
 
+    bool Command::isJson(const char* json)
+    {
+        cJSON *cjsonRoot;
+        cjsonRoot = cJSON_Parse(json);
+        if (cjsonRoot == NULL) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     bool Command::parseBasic(const char *json, REQUEST_BODY_BASIC *basic) {
 
         cJSON *cjsonRoot, *cjsonId, *cjsonCmd;

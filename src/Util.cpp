@@ -44,5 +44,16 @@ namespace ATE
         }
         return dst;
     }
+
+    bool isJson(const char* src)
+    {
+        cJSON *cjsonRoot;
+        cjsonRoot = cJSON_Parse(src);
+        if (cjsonRoot == NULL) {
+            return false;
+        } else {
+            return true;
+        }
+    }
 }
 
