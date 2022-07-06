@@ -68,7 +68,9 @@ char* CmdInfo::Print(RESPONSE_BODY_INFO* res) {
    cJSON *doc = cJSON_CreateObject();
         
     cJSON_AddItemToObject(doc, "id", cJSON_CreateNumber(res->id));
-    cJSON_AddItemToObject(doc, "err", cJSON_CreateString(res->err));
+    if (res->err != NULL) {
+        cJSON_AddItemToObject(doc, "err", cJSON_CreateString(res->err));
+    }
 
     cJSON_AddItemToObject(doc, "mac", cJSON_CreateString(res->mac));
     cJSON_AddItemToObject(doc, "ver", cJSON_CreateString(res->ver));
@@ -111,7 +113,7 @@ void CmdInfo::Execute(REQUEST_BODY_INFO* req, RESPONSE_BODY_INFO* res) {
         sprintf(macStr, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
         res->mac = macStr;
 
-        char* json = Print(req);
+        char* json = Print(res);
         uart_write_bytes(G_MCU[req->mcu].uartNum, json, strlen(json));
 
     } else {

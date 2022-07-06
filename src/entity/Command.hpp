@@ -68,6 +68,8 @@ namespace ATE
 
     // <复位/清零>请求结构体
     struct REQUEST_BODY_RESET : public REQUEST_BODY_BASIC {
+        int chn;
+        int mcu;
         REQUEST_BODY_RESET() {
             key = REQUEST_KEY::REQUEST_KEY_RESET;
         }

@@ -63,7 +63,6 @@ void UartService::mainTaskEvent(void *pvParameters)
                         uart_read_bytes(uart->uartNum, dtmp, event.size, portMAX_DELAY);
                         // Todo
                         //uart_write_bytes(uart->uartNum, (const char*) dtmp, event.size);
-                        //接受数据后，转发至下级通讯端口
                         // uart_write_bytes(G_UartSubJson.uartNum, (const char*) dtmp, event.size);
                         // uart_write_bytes(G_UartSubData.uartNum, (const char*) dtmp, event.size);
                         
@@ -76,7 +75,6 @@ void UartService::mainTaskEvent(void *pvParameters)
                             reqBasic = cmdBasic.Parse((const char*)dtmp);
                             if (reqBasic->err == NULL) {
                                 cmdBasic.Execute(reqBasic, resBasic);
-
                                 switch (reqBasic->key) {
                                     case REQUEST_KEY_INFO:
                                         {
@@ -88,10 +86,10 @@ void UartService::mainTaskEvent(void *pvParameters)
                                             // 解析指令
                                             reqInfo = cmdInfo.Parse((const char*)dtmp);
                                             if (reqInfo->err == NULL) {
-                                                // ESP_LOGI("Debug", "cmdInfo.Parse OK... ");
                                                 // 执行指令
                                                 cmdInfo.Execute(reqInfo, resInfo);
                                             } else {
+                                                // 解析失败，直接返回错误
                                                 resInfo->id = resBasic->id;
                                                 resInfo->err = reqInfo->err;
                                                 char* res = cmdInfo.Print(resInfo);
@@ -100,7 +98,23 @@ void UartService::mainTaskEvent(void *pvParameters)
                                             
                                         }
                                         break;
-                                    
+                                    case REQUEST_KEY_RESET:
+                                        {
+                                            CmdReset cmdReset = CmdReset();
+                                            REQUEST_BODY_RESET* reqReset = new REQUEST_BODY_RESET();
+                                            RESPONSE_BODY_RESET* resReset = new RESPONSE_BODY_RESET();
+
+                                            reqReset = cmdReset.Parse((const char*)dtmp);
+                                            if (reqReset->err == NULL) {
+                                                cmdReset.Execute(reqReset, resReset);
+                                            } else {
+                                                resReset->id = resBasic->id;
+                                                resReset->err = reqReset->err;
+                                                char* res = cmdReset.Print(resReset);
+                                                uart_write_bytes(uart->uartNum, (const char*)res, strlen(res));
+                                            }
+                                        }
+                                        break;
                                     default:
                                         break;
                                 }
