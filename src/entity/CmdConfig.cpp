@@ -1,17 +1,17 @@
 
-#include "CmdReset.hpp"
+#include "CmdConfig.hpp"
 
-CmdReset::CmdReset(/* args */)
+CmdConfig::CmdConfig(/* args */)
 {
-    
+
 }
 
-CmdReset::~CmdReset()
+CmdConfig::~CmdConfig()
 {
 }
 
-REQUEST_BODY_RESET* CmdReset::Parse(const char* json) {
-    REQUEST_BODY_RESET* req = new REQUEST_BODY_RESET();
+REQUEST_BODY_CONFIG* CmdConfig::Parse(const char* json) {
+    REQUEST_BODY_CONFIG* req = new REQUEST_BODY_CONFIG();
 
     cJSON *doc, *id, *cmd, *mcu;
     doc = cJSON_Parse(json);
@@ -30,8 +30,8 @@ REQUEST_BODY_RESET* CmdReset::Parse(const char* json) {
         
         cmd = cJSON_GetObjectItem(doc, "cmd");
         req->cmd = cmd->valuestring;
-        if (strcmp(req->cmd, "reset") == 0) {
-            req->key = REQUEST_KEY::REQUEST_KEY_RESET;
+        if (strcmp(req->cmd, "config") == 0) {
+            req->key = REQUEST_KEY::REQUEST_KEY_CONFIG;
         } else {
             req->key = REQUEST_KEY::REQUEST_KEY_ERROR;
             req->err = (char*)"cmd error.";
@@ -52,9 +52,7 @@ REQUEST_BODY_RESET* CmdReset::Parse(const char* json) {
     return req;
 }
 
-char* CmdReset::Print(RESPONSE_BODY_RESET* res) {
-    char* json;
-
+char* CmdConfig::Print(RESPONSE_BODY_CONFIG* res) {
     cJSON *doc = cJSON_CreateObject();
         
     cJSON_AddItemToObject(doc, "id", cJSON_CreateNumber(res->id));
@@ -62,15 +60,10 @@ char* CmdReset::Print(RESPONSE_BODY_RESET* res) {
         cJSON_AddItemToObject(doc, "err", cJSON_CreateString(res->err));
     }
 
-    json = cJSON_Print(doc);
-    cJSON_Delete(doc);
-
-    return json;
+    return cJSON_Print(doc);
 }
 
-char* CmdReset::Print(REQUEST_BODY_RESET* req) {
-    char* json;
-
+char* CmdConfig::Print(REQUEST_BODY_CONFIG* req) {
     cJSON *doc = cJSON_CreateObject();
         
     cJSON_AddItemToObject(doc, "id", cJSON_CreateNumber(req->id));
@@ -81,31 +74,23 @@ char* CmdReset::Print(REQUEST_BODY_RESET* req) {
     cJSON_AddItemToObject(doc, "chn", cJSON_CreateNumber(req->chn));
     cJSON_AddItemToObject(doc, "mcu", cJSON_CreateNumber(req->mcu));
 
-    json = cJSON_Print(doc);
-    cJSON_Delete(doc);
-
-    return json;
+    return cJSON_Print(doc);
 }
 
-void CmdReset::Execute(REQUEST_BODY_RESET* req, RESPONSE_BODY_RESET* res) {
+void CmdConfig::Execute(REQUEST_BODY_CONFIG* req, RESPONSE_BODY_CONFIG* res) {
     res->id = req->id;
-    
-    if (G_MCU[req->mcu].isJson) {
-        char* json = Print(res);
-        uart_write_bytes(G_MCU[req->mcu].uartNum, json, strlen(json));
-        free(json);
-    } else {
-        //A2 0E 01 0C 00 00 00 00 00 00 00 00 00 00 00 00
-        unsigned char buf[16] = { 0xa2, 0x0e, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-        buf[2] = req->chn;
-        uart_write_bytes(G_MCU[req->mcu].uartNum, buf, 16);
-        free(buf);
-    }
 
-    if (req->mcu == 0) {
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        fflush(stdout);
-        esp_restart();
-    }
-    
+    ConfigFile configFile = ConfigFile();
+    configFile.Initialize();
+
+    char* json = Print(res);
+    uart_write_bytes(G_UartMain.uartNum, json, strlen(json));
+}
+
+void CmdConfig::Error(REQUEST_BODY_CONFIG* req, RESPONSE_BODY_CONFIG* res) {
+    res->id = req->id;
+    res->err = req->err;
+
+    char* json = Print(res);
+    uart_write_bytes(G_UartMain.uartNum, json, strlen(json));
 }

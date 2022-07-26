@@ -61,11 +61,15 @@ REQUEST_BODY_INFO* CmdInfo::Parse(const char* json) {
         }
 
     }
+
+    cJSON_Delete(doc);
     return reqInfo;
 }
 
 char* CmdInfo::Print(RESPONSE_BODY_INFO* res) {
-   cJSON *doc = cJSON_CreateObject();
+    char* json;
+
+    cJSON *doc = cJSON_CreateObject();
         
     cJSON_AddItemToObject(doc, "id", cJSON_CreateNumber(res->id));
     if (res->err != NULL) {
@@ -79,11 +83,14 @@ char* CmdInfo::Print(RESPONSE_BODY_INFO* res) {
     cJSON_AddItemToObject(doc, "chn", cJSON_CreateNumber(res->chn));
     cJSON_AddItemToObject(doc, "cnn", cJSON_CreateNumber(res->cnn));
 
-
-    return cJSON_Print(doc);
+    json = cJSON_Print(doc);
+    cJSON_Delete(doc);
+    
+    return json;
 }
 
 char* CmdInfo::Print(REQUEST_BODY_INFO* req) {
+    char* json;
     cJSON *doc = cJSON_CreateObject();
         
     cJSON_AddItemToObject(doc, "id", cJSON_CreateNumber(req->id));
@@ -94,7 +101,10 @@ char* CmdInfo::Print(REQUEST_BODY_INFO* req) {
     cJSON_AddItemToObject(doc, "chn", cJSON_CreateNumber(req->chn));
     cJSON_AddItemToObject(doc, "mcu", cJSON_CreateNumber(req->mcu));
 
-    return cJSON_Print(doc);
+    json = cJSON_Print(doc);
+    cJSON_Delete(doc);
+
+    return json;
 }
 
 void CmdInfo::Execute(REQUEST_BODY_INFO* req, RESPONSE_BODY_INFO* res) {
@@ -107,7 +117,7 @@ void CmdInfo::Execute(REQUEST_BODY_INFO* req, RESPONSE_BODY_INFO* res) {
         res->chn = req->chn;
         res->chn = req->chn;
 
-        uint8_t mac[6] = {0};
+        uint8_t mac[6] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
         esp_efuse_mac_get_default(mac);
         char macStr[18] = { 0 };
         sprintf(macStr, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
@@ -115,11 +125,12 @@ void CmdInfo::Execute(REQUEST_BODY_INFO* req, RESPONSE_BODY_INFO* res) {
 
         char* json = Print(res);
         uart_write_bytes(G_MCU[req->mcu].uartNum, json, strlen(json));
-
+        free(json);
     } else {
         if (G_MCU[req->mcu].isJson) {
             char* buf = Print(req);
             uart_write_bytes(G_MCU[req->mcu].uartNum, buf, strlen(buf));
+            free(buf);
         } else {
             const unsigned char buf[5] = { 0xdd, 0xdd, 0xdd, 0xdd, 0xdd };
             uart_write_bytes(G_MCU[req->mcu].uartNum, buf, 5);

@@ -17,6 +17,9 @@ using namespace std;
 
 #include "UartService.hpp"
 
+//#define GPIO_OUTPUT_IO_1    CONFIG_GPIO_OUTPUT_1
+#define GPIO_BIT_MASK  ((1ULL<<GPIO_NUM_2) | (1ULL<<GPIO_NUM_4)) 
+
 extern "C" {
 	void app_main(void);
 }
@@ -49,9 +52,23 @@ void app_main(void) {
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 
-    G_QueueMain = xQueueCreate(20, sizeof(UartConfig));
-    G_QueueSubJson = xQueueCreate(20, sizeof(UartConfig));
-    G_QueueSubData = xQueueCreate(20, sizeof(UartConfig));
+    // // GPIO配置
+    // gpio_set_direction(GPIO_NUM_2, GPIO_MODE_OUTPUT);       // 设置引脚2为输入
+    // gpio_set_level(GPIO_NUM_2, 1);                         // 设置引脚2为高电平
+
+    // // GPIO初始化
+    // gpio_config_t io_conf = {};
+    // io_conf.intr_type = GPIO_INTR_DISABLE;          //禁用中断
+    // io_conf.mode = GPIO_MODE_INPUT;                 //输入模式
+    // io_conf.pull_up_en = GPIO_PULLUP_ENABLE;        //使能上拉
+    // io_conf.pin_bit_mask = (1ULL<<GPIO_NUM_2) | (1ULL<<GPIO_NUM_4);
+    // gpio_config(&io_conf);                          //配置GPIO
+    // vTaskDelay(1000 / portTICK_PERIOD_MS);
+    // gpio_set_level(GPIO_NUM_2, 1);                  //设置GPIO2电平
+
+    G_QueueMain = xQueueCreate(5, sizeof(UartConfig));
+    G_QueueSubJson = xQueueCreate(5, sizeof(UartConfig));
+    G_QueueSubData = xQueueCreate(5, sizeof(UartConfig));
     
     UartService uartService = UartService();
     uartService.MainTaskCreate();

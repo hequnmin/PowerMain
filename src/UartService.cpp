@@ -55,6 +55,7 @@ void UartService::mainTaskEvent(void *pvParameters)
     uint8_t* dtmp = (uint8_t*) malloc(G_UART_BUFFER_SIZE);
     for(;;) {
         //Waiting for UART event.
+        assert(dtmp);
         if(xQueueReceive(G_QueueMain, (void * )&event, (TickType_t)portMAX_DELAY)) {
             bzero(dtmp, G_UART_BUFFER_SIZE);
             switch(event.type) {
@@ -62,7 +63,7 @@ void UartService::mainTaskEvent(void *pvParameters)
                     {
                         uart_read_bytes(uart->uartNum, dtmp, event.size, portMAX_DELAY);
                         // Todo
-                        //uart_write_bytes(uart->uartNum, (const char*) dtmp, event.size);
+                        // uart_write_bytes(uart->uartNum, (const char*) dtmp, event.size);
                         // uart_write_bytes(G_UartSubJson.uartNum, (const char*) dtmp, event.size);
                         // uart_write_bytes(G_UartSubData.uartNum, (const char*) dtmp, event.size);
                         
@@ -74,10 +75,14 @@ void UartService::mainTaskEvent(void *pvParameters)
                             
                             reqBasic = cmdBasic.Parse((const char*)dtmp);
                             if (reqBasic->err == NULL) {
+                                //uart_write_bytes(uart->uartNum, (const char*) dtmp, event.size);
+
                                 cmdBasic.Execute(reqBasic, resBasic);
                                 switch (reqBasic->key) {
                                     case REQUEST_KEY_INFO:
                                         {
+                                            // uart_write_bytes(uart->uartNum, (const char*) dtmp, event.size);
+
                                             // 创建指令对象
                                             CmdInfo cmdInfo = CmdInfo();
                                             REQUEST_BODY_INFO* reqInfo = new REQUEST_BODY_INFO();
@@ -86,8 +91,12 @@ void UartService::mainTaskEvent(void *pvParameters)
                                             // 解析指令
                                             reqInfo = cmdInfo.Parse((const char*)dtmp);
                                             if (reqInfo->err == NULL) {
+                                                // uart_write_bytes(uart->uartNum, (const char*) dtmp, event.size);
+                                                
                                                 // 执行指令
                                                 cmdInfo.Execute(reqInfo, resInfo);
+
+                                                vTaskDelay(100 / portTICK_PERIOD_MS);
                                             } else {
                                                 // 解析失败，直接返回错误
                                                 resInfo->id = resBasic->id;
@@ -96,6 +105,8 @@ void UartService::mainTaskEvent(void *pvParameters)
                                                 uart_write_bytes(uart->uartNum, (const char*)res, strlen(res));
                                             }
                                             
+                                            delete reqInfo;
+                                            delete resInfo;
                                         }
                                         break;
                                     case REQUEST_KEY_RESET:
@@ -113,6 +124,26 @@ void UartService::mainTaskEvent(void *pvParameters)
                                                 char* res = cmdReset.Print(resReset);
                                                 uart_write_bytes(uart->uartNum, (const char*)res, strlen(res));
                                             }
+
+                                            delete reqReset;
+                                            delete resReset;
+                                        }
+                                        break;
+                                    case REQUEST_KEY_CONFIG:
+                                        {
+                                            CmdConfig cmdConfig = CmdConfig();
+                                            REQUEST_BODY_CONFIG* reqConfig = new REQUEST_BODY_CONFIG();
+                                            RESPONSE_BODY_CONFIG* resConfig = new RESPONSE_BODY_CONFIG();
+
+                                            reqConfig = cmdConfig.Parse((const char*)dtmp);
+                                            if (reqConfig->err == NULL) {
+                                                cmdConfig.Execute(reqConfig, resConfig);
+                                            } else {
+                                                cmdConfig.Error(reqConfig, resConfig);
+                                            }
+
+                                            delete reqConfig;
+                                            delete resConfig;
                                         }
                                         break;
                                     default:
@@ -126,6 +157,9 @@ void UartService::mainTaskEvent(void *pvParameters)
                                 uart_write_bytes(uart->uartNum, (const char*)res, strlen(res));
                             }
                             
+                            delete reqBasic;
+                            // delete resBasic;
+
                         } else {
                             uart_write_bytes(G_UartSubData.uartNum, (const char*) dtmp, event.size);
                         }

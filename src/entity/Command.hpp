@@ -27,6 +27,7 @@ namespace ATE
         REQUEST_KEY_BASIC,          // 基本请求
         REQUEST_KEY_INFO,           // <获取系统信息>请求
         REQUEST_KEY_RESET,          // <复位/清零>请求
+        REQUEST_KEY_CONFIG,         
         REQUEST_KEY_CUSTOM,         // <自定义>请求
         REQUEST_KEY_SETVOL,         // 电压设置
         REQUEST_KEY_GETVOL,         // 电压读数
@@ -77,6 +78,19 @@ namespace ATE
 
     // <复位/清零>应答结构体
     struct RESPONSE_BODY_RESET : public RESPONSE_BODY_BASIC {
+    };
+
+    // <文件系统>请求结构体
+    struct REQUEST_BODY_CONFIG : public REQUEST_BODY_BASIC {
+        int chn;
+        int mcu;
+        REQUEST_BODY_CONFIG() {
+            key = REQUEST_KEY::REQUEST_KEY_CONFIG;
+        }
+    };
+
+    // <文件系统>应答结构体
+    struct RESPONSE_BODY_CONFIG : public RESPONSE_BODY_BASIC {
     };
 
     // <自定义>请求结构体

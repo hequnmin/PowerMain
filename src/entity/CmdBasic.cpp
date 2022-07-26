@@ -43,6 +43,8 @@ REQUEST_BODY_BASIC* CmdBasic::Parse(const char* json) {
             reqBasic->key = REQUEST_KEY::REQUEST_KEY_INFO;
         } else if (strcmp(reqBasic->cmd, "reset") == 0) {
             reqBasic->key = REQUEST_KEY::REQUEST_KEY_RESET;
+        } else if (strcmp(reqBasic->cmd, "config") == 0) {
+            reqBasic->key = REQUEST_KEY::REQUEST_KEY_CONFIG;
         } else if (strcmp(reqBasic->cmd, "custom") == 0) {
             reqBasic->key = REQUEST_KEY::REQUEST_KEY_CUSTOM;
         } else if (strcmp(reqBasic->cmd, "setvol") == 0) {
@@ -55,6 +57,7 @@ REQUEST_BODY_BASIC* CmdBasic::Parse(const char* json) {
             return reqBasic;
         }
 
+        cJSON_Delete(root);
         return reqBasic;
     }
 }

@@ -47,13 +47,14 @@ namespace ATE
 
     bool isJson(const char* src)
     {
-        cJSON *cjsonRoot;
-        cjsonRoot = cJSON_Parse(src);
-        if (cjsonRoot == NULL) {
+        cJSON *cjson;
+        
+        cjson = cJSON_Parse(src);
+        if (cjson == NULL) {
             return false;
-        } else {
-            return true;
         }
+        cJSON_Delete(cjson);        // 释放内存
+        return true;
     }
 }
 
