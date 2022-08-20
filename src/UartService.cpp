@@ -37,7 +37,7 @@ void UartService::MainTaskCreate()
 
     // 创建任务
     if (G_QueueMain != NULL) {
-        xTaskCreate(mainTaskEvent, "MainUart Task", 2048, (void *) &(G_UartMain), 11, NULL);
+        xTaskCreate(mainTaskEvent, "MainUart Task", 4096, (void *) &(G_UartMain), 11, NULL);
     } else {
         ESP_LOGI("UartService", "MainTaskCreate fail.\n");
     }
@@ -96,7 +96,6 @@ void UartService::mainTaskEvent(void *pvParameters)
                                                 // 执行指令
                                                 cmdInfo.Execute(reqInfo, resInfo);
 
-                                                vTaskDelay(100 / portTICK_PERIOD_MS);
                                             } else {
                                                 // 解析失败，直接返回错误
                                                 resInfo->id = resBasic->id;
@@ -158,7 +157,7 @@ void UartService::mainTaskEvent(void *pvParameters)
                             }
                             
                             delete reqBasic;
-                            // delete resBasic;
+                            delete resBasic;
 
                         } else {
                             uart_write_bytes(G_UartSubData.uartNum, (const char*) dtmp, event.size);
