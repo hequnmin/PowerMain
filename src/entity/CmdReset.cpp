@@ -103,7 +103,7 @@ void CmdReset::Execute(REQUEST_BODY_RESET* req, RESPONSE_BODY_RESET* res) {
     }
 
     if (req->mcu == 0) {
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        vTaskDelay(50 / portTICK_PERIOD_MS);
         fflush(stdout);
         esp_restart();
     }
