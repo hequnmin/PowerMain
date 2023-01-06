@@ -31,6 +31,7 @@ namespace ATE
         REQUEST_KEY_CUSTOM,         // <自定义>请求
         REQUEST_KEY_SETVOL,         // 电压设置
         REQUEST_KEY_GETVOL,         // 电压读数
+        REQUEST_KEY_UART,          // <UART通讯>请求
     };
 
     // 基本请求结构体
@@ -131,6 +132,25 @@ namespace ATE
     // <电压读数>应答结构体
     struct RESPONSE_BODY_GETVOL : public RESPONSE_BODY_BASIC {
         vector<double> vol;             // 电芯电压读数
+    };
+
+    // <Uart通讯>请求结构体
+    struct REQUEST_BODY_UART : public REQUEST_BODY_BASIC {
+        int baud;           // 波特率
+        int vcc;            // Uart供电
+        int status;         // 是否保持连接
+        int delay;
+        unsigned char* data;
+        int len;
+        REQUEST_BODY_UART() {
+            key = REQUEST_KEY::REQUEST_KEY_UART;
+        }
+    };
+
+    // <Uart通讯>应答结构体
+    struct RESPONSE_BODY_UART : public RESPONSE_BODY_BASIC {
+        unsigned char* data;
+        int len;
     };
 
     // 指令类

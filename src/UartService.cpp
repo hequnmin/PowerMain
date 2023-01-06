@@ -53,6 +53,7 @@ void UartService::mainTaskEvent(void *pvParameters)
     uart_event_t event;
     // size_t buffered_size;
     uint8_t* dtmp = (uint8_t*) malloc(G_UART_BUFFER_SIZE);
+    int dsiz = G_UART_BUFFER_SIZE;
     for(;;) {
         //Waiting for UART event.
         assert(dtmp);
@@ -61,7 +62,8 @@ void UartService::mainTaskEvent(void *pvParameters)
             switch(event.type) {
                 case UART_DATA:
                     {
-                        uart_read_bytes(uart->uartNum, dtmp, event.size, portMAX_DELAY);
+                        //uart_read_bytes(uart->uartNum, dtmp, event.size, portMAX_DELAY);
+                        dsiz = uart_read_bytes(uart->uartNum, dtmp, G_UART_BUFFER_SIZE * 2, 200 / portTICK_RATE_MS);
                         // Todo
                         // uart_write_bytes(uart->uartNum, (const char*) dtmp, event.size);
                         // uart_write_bytes(G_UartSubJson.uartNum, (const char*) dtmp, event.size);
@@ -143,6 +145,23 @@ void UartService::mainTaskEvent(void *pvParameters)
 
                                             delete reqConfig;
                                             delete resConfig;
+                                        }
+                                        break;
+                                    case REQUEST_KEY_UART:
+                                        {
+                                            CmdUart cmdUart = CmdUart();
+                                            REQUEST_BODY_UART* reqUart = new REQUEST_BODY_UART();
+                                            RESPONSE_BODY_UART* resUart = new RESPONSE_BODY_UART();
+
+                                            reqUart = cmdUart.Parse((const char*)dtmp);
+                                            if (reqUart->err == NULL) {
+                                                cmdUart.Execute(reqUart, resUart);
+                                            } else {
+                                                resUart->id = resBasic->id;
+                                                resUart->err = reqUart->err;
+                                                char* res = cmdUart.Print(resUart);
+                                                uart_write_bytes(uart->uartNum, (const char*)res, strlen(res));
+                                            }
                                         }
                                         break;
                                     default:

@@ -51,6 +51,8 @@ REQUEST_BODY_BASIC* CmdBasic::Parse(const char* json) {
             reqBasic->key = REQUEST_KEY::REQUEST_KEY_SETVOL;
         } else if (strcmp(reqBasic->cmd, "getvol") == 0) {
             reqBasic->key = REQUEST_KEY::REQUEST_KEY_GETVOL;
+        } else if (strcmp(reqBasic->cmd, "uart") == 0) {
+            reqBasic->key = REQUEST_KEY::REQUEST_KEY_UART;
         } else {
             reqBasic->key = REQUEST_KEY::REQUEST_KEY_ERROR;
             reqBasic->err = "cmd error.";

@@ -10,6 +10,7 @@ using namespace ATE;
 #include "entity/CmdInfo.hpp"
 #include "entity/CmdReset.hpp"
 #include "entity/CmdConfig.hpp"
+#include "entity/CmdUart.hpp"
 #include "util/Util.hpp"
 
 class UartService
