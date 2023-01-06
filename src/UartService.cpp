@@ -63,7 +63,7 @@ void UartService::mainTaskEvent(void *pvParameters)
                 case UART_DATA:
                     {
                         //uart_read_bytes(uart->uartNum, dtmp, event.size, portMAX_DELAY);
-                        dsiz = uart_read_bytes(uart->uartNum, dtmp, G_UART_BUFFER_SIZE * 2, 200 / portTICK_RATE_MS);
+                        dsiz = uart_read_bytes(uart->uartNum, dtmp, G_UART_BUFFER_SIZE, 200 / portTICK_RATE_MS);
                         // Todo
                         // uart_write_bytes(uart->uartNum, (const char*) dtmp, event.size);
                         // uart_write_bytes(G_UartSubJson.uartNum, (const char*) dtmp, event.size);
