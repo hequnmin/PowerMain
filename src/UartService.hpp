@@ -7,6 +7,7 @@
 #include "entity/Command.hpp"
 using namespace ATE;
 #include "entity/CmdBasic.hpp"
+#include "entity/CmdError.hpp"
 #include "entity/CmdInfo.hpp"
 #include "entity/CmdReset.hpp"
 #include "entity/CmdConfig.hpp"

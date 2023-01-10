@@ -50,136 +50,170 @@ void UartService::mainTaskEvent(void *pvParameters)
 
     UartConfig *uart = (UartConfig *)pvParameters;
 
+    // Uart 驱动程序工作方式：
+    // 1.检测到中断
+    // 2.Uart等待120个字节（120个字节由驱动配置）
+    // 3.Uart接收120个字节，传入缓存buffer，并触发事件，且设置event.size = 120，低级FIFO继续接收更多字节
+    // 4.上游代码接收事件并读取120字节，缓存被清除
+    // 5.再转入步骤2等待120个字节
+    // 6.若接收到数据小于120个字节，因未达到120个字节阈值，不执行任何操作。
+    // 7.继续监听中断
+    // 8.返回步骤1
+
     uart_event_t event;
-    // size_t buffered_size;
-    uint8_t* dtmp = (uint8_t*) malloc(G_UART_BUFFER_SIZE);
-    int dsiz = G_UART_BUFFER_SIZE;
+    
+    uint8_t* dtmp = (uint8_t*) malloc(G_UART_BUFFER_SIZE);      // 接收数据
+    uint8_t* dsub = (uint8_t*) malloc(G_UART_BUFFER_SIZE);      // 分段数据
+    bzero(dsub, G_UART_BUFFER_SIZE);    // 清零接收数据
+
+    int len = 0, sub = 0;
+    int timeout = 50;    
+    bool finish = false;
+
     for(;;) {
         //Waiting for UART event.
-        assert(dtmp);
-        if(xQueueReceive(G_QueueMain, (void * )&event, (TickType_t)portMAX_DELAY)) {
-            bzero(dtmp, G_UART_BUFFER_SIZE);
+        if(xQueueReceive(G_QueueMain, (void * )&event, timeout / portTICK_RATE_MS)) {
+            bzero(dsub, G_UART_BUFFER_SIZE);        // 清零分段数据
             switch(event.type) {
                 case UART_DATA:
                     {
                         //uart_read_bytes(uart->uartNum, dtmp, event.size, portMAX_DELAY);
-                        dsiz = uart_read_bytes(uart->uartNum, dtmp, G_UART_BUFFER_SIZE, 200 / portTICK_RATE_MS);
-                        // Todo
-                        // uart_write_bytes(uart->uartNum, (const char*) dtmp, event.size);
-                        // uart_write_bytes(G_UartSubJson.uartNum, (const char*) dtmp, event.size);
-                        // uart_write_bytes(G_UartSubData.uartNum, (const char*) dtmp, event.size);
-                        
-                        // 检测是否Json
-                        if (isJson((const char*)dtmp)) {
-                            CmdBasic cmdBasic = CmdBasic();
-                            REQUEST_BODY_BASIC* reqBasic = new REQUEST_BODY_BASIC();
-                            RESPONSE_BODY_BASIC* resBasic = new RESPONSE_BODY_BASIC();
-                            
-                            reqBasic = cmdBasic.Parse((const char*)dtmp);
-                            if (reqBasic->err == NULL) {
-                                //uart_write_bytes(uart->uartNum, (const char*) dtmp, event.size);
+                        sub = uart_read_bytes(uart->uartNum, dsub, event.size, timeout / portTICK_RATE_MS);      
 
-                                cmdBasic.Execute(reqBasic, resBasic);
-                                switch (reqBasic->key) {
-                                    case REQUEST_KEY_INFO:
-                                        {
-                                            // uart_write_bytes(uart->uartNum, (const char*) dtmp, event.size);
-
-                                            // 创建指令对象
-                                            CmdInfo cmdInfo = CmdInfo();
-                                            REQUEST_BODY_INFO* reqInfo = new REQUEST_BODY_INFO();
-                                            RESPONSE_BODY_INFO* resInfo = new RESPONSE_BODY_INFO();
-                                            
-                                            // 解析指令
-                                            reqInfo = cmdInfo.Parse((const char*)dtmp);
-                                            if (reqInfo->err == NULL) {
-                                                // uart_write_bytes(uart->uartNum, (const char*) dtmp, event.size);
-                                                
-                                                // 执行指令
-                                                cmdInfo.Execute(reqInfo, resInfo);
-
-                                            } else {
-                                                // 解析失败，直接返回错误
-                                                resInfo->id = resBasic->id;
-                                                resInfo->err = reqInfo->err;
-                                                char* res = cmdInfo.Print(resInfo);
-                                                uart_write_bytes(uart->uartNum, (const char*)res, strlen(res));
-                                            }
-                                            
-                                            delete reqInfo;
-                                            delete resInfo;
-                                        }
-                                        break;
-                                    case REQUEST_KEY_RESET:
-                                        {
-                                            CmdReset cmdReset = CmdReset();
-                                            REQUEST_BODY_RESET* reqReset = new REQUEST_BODY_RESET();
-                                            RESPONSE_BODY_RESET* resReset = new RESPONSE_BODY_RESET();
-
-                                            reqReset = cmdReset.Parse((const char*)dtmp);
-                                            if (reqReset->err == NULL) {
-                                                cmdReset.Execute(reqReset, resReset);
-                                            } else {
-                                                resReset->id = resBasic->id;
-                                                resReset->err = reqReset->err;
-                                                char* res = cmdReset.Print(resReset);
-                                                uart_write_bytes(uart->uartNum, (const char*)res, strlen(res));
-                                            }
-
-                                            delete reqReset;
-                                            delete resReset;
-                                        }
-                                        break;
-                                    case REQUEST_KEY_CONFIG:
-                                        {
-                                            CmdConfig cmdConfig = CmdConfig();
-                                            REQUEST_BODY_CONFIG* reqConfig = new REQUEST_BODY_CONFIG();
-                                            RESPONSE_BODY_CONFIG* resConfig = new RESPONSE_BODY_CONFIG();
-
-                                            reqConfig = cmdConfig.Parse((const char*)dtmp);
-                                            if (reqConfig->err == NULL) {
-                                                cmdConfig.Execute(reqConfig, resConfig);
-                                            } else {
-                                                cmdConfig.Error(reqConfig, resConfig);
-                                            }
-
-                                            delete reqConfig;
-                                            delete resConfig;
-                                        }
-                                        break;
-                                    case REQUEST_KEY_UART:
-                                        {
-                                            CmdUart cmdUart = CmdUart();
-                                            REQUEST_BODY_UART* reqUart = new REQUEST_BODY_UART();
-                                            RESPONSE_BODY_UART* resUart = new RESPONSE_BODY_UART();
-
-                                            reqUart = cmdUart.Parse((const char*)dtmp);
-                                            if (reqUart->err == NULL) {
-                                                cmdUart.Execute(reqUart, resUart);
-                                            } else {
-                                                resUart->id = resBasic->id;
-                                                resUart->err = reqUart->err;
-                                                char* res = cmdUart.Print(resUart);
-                                                uart_write_bytes(uart->uartNum, (const char*)res, strlen(res));
-                                            }
-                                        }
-                                        break;
-                                    default:
-                                        break;
-                                }
+                        // 分段数据汇入总接收数据
+                        if (event.size > 0) {
+                            memcpy(dtmp+len,  dsub, sub);
+                            len = len + sub;
+                            // 检测结束符(回车换行符结尾)
+                            if (dsub[event.size - 1] == 10 && dsub[event.size - 2] == 13) {
+                                finish = true;
                             } else {
-                                // ESP_LOGI("Debug", "cmdBasic.Parse Error... ");
-                                resBasic->id = reqBasic->id;
-                                resBasic->err = reqBasic->err;
-                                char* res = cmdBasic.Print(resBasic);
-                                uart_write_bytes(uart->uartNum, (const char*)res, strlen(res));
+                                finish = false;
                             }
-                            
-                            delete reqBasic;
-                            delete resBasic;
+                        }
 
-                        } else {
-                            uart_write_bytes(G_UartSubData.uartNum, (const char*) dtmp, event.size);
+                        if (finish) {
+                            finish = false;
+                            
+                            // 检测是否Json
+                            if (isJson((const char*)dtmp)) {
+                                CmdBasic cmdBasic = CmdBasic();
+                                REQUEST_BODY_BASIC* reqBasic = new REQUEST_BODY_BASIC();
+                                RESPONSE_BODY_BASIC* resBasic = new RESPONSE_BODY_BASIC();
+                                
+                                reqBasic = cmdBasic.Parse((const char*)dtmp);
+                                if (reqBasic->err == NULL) {
+                                    //uart_write_bytes(uart->uartNum, (const char*) dtmp, event.size);
+
+                                    cmdBasic.Execute(reqBasic, resBasic);
+                                    switch (reqBasic->key) {
+                                        case REQUEST_KEY_INFO:
+                                            {
+                                                // uart_write_bytes(uart->uartNum, (const char*) dtmp, event.size);
+
+                                                // 创建指令对象
+                                                CmdInfo cmdInfo = CmdInfo();
+                                                REQUEST_BODY_INFO* reqInfo = new REQUEST_BODY_INFO();
+                                                RESPONSE_BODY_INFO* resInfo = new RESPONSE_BODY_INFO();
+                                                
+                                                // 解析指令
+                                                reqInfo = cmdInfo.Parse((const char*)dtmp);
+                                                if (reqInfo->err == NULL) {
+                                                    // uart_write_bytes(uart->uartNum, (const char*) dtmp, event.size);
+                                                    
+                                                    // 执行指令
+                                                    cmdInfo.Execute(reqInfo, resInfo);
+
+                                                } else {
+                                                    // 解析失败，直接返回错误
+                                                    resInfo->id = resBasic->id;
+                                                    resInfo->err = reqInfo->err;
+                                                    char* res = cmdInfo.Print(resInfo);
+                                                    uart_write_bytes(uart->uartNum, (const char*)res, strlen(res));
+                                                }
+                                                
+                                                delete reqInfo;
+                                                delete resInfo;
+                                            }
+                                            break;
+                                        case REQUEST_KEY_RESET:
+                                            {
+                                                CmdReset cmdReset = CmdReset();
+                                                REQUEST_BODY_RESET* reqReset = new REQUEST_BODY_RESET();
+                                                RESPONSE_BODY_RESET* resReset = new RESPONSE_BODY_RESET();
+
+                                                reqReset = cmdReset.Parse((const char*)dtmp);
+                                                if (reqReset->err == NULL) {
+                                                    cmdReset.Execute(reqReset, resReset);
+                                                } else {
+                                                    resReset->id = resBasic->id;
+                                                    resReset->err = reqReset->err;
+                                                    char* res = cmdReset.Print(resReset);
+                                                    uart_write_bytes(uart->uartNum, (const char*)res, strlen(res));
+                                                }
+
+                                                delete reqReset;
+                                                delete resReset;
+                                            }
+                                            break;
+                                        case REQUEST_KEY_CONFIG:
+                                            {
+                                                CmdConfig cmdConfig = CmdConfig();
+                                                REQUEST_BODY_CONFIG* reqConfig = new REQUEST_BODY_CONFIG();
+                                                RESPONSE_BODY_CONFIG* resConfig = new RESPONSE_BODY_CONFIG();
+
+                                                reqConfig = cmdConfig.Parse((const char*)dtmp);
+                                                if (reqConfig->err == NULL) {
+                                                    cmdConfig.Execute(reqConfig, resConfig);
+                                                } else {
+                                                    cmdConfig.Error(reqConfig, resConfig);
+                                                }
+
+                                                delete reqConfig;
+                                                delete resConfig;
+                                            }
+                                            break;
+                                        case REQUEST_KEY_UART:
+                                            {
+                                                CmdUart cmdUart = CmdUart();
+                                                REQUEST_BODY_UART* reqUart = new REQUEST_BODY_UART();
+                                                RESPONSE_BODY_UART* resUart = new RESPONSE_BODY_UART();
+
+                                                reqUart = cmdUart.Parse((const char*)dtmp);
+                                                if (reqUart->err == NULL) {
+                                                    cmdUart.Execute(reqUart, resUart);
+                                                } else {
+                                                    resUart->id = resBasic->id;
+                                                    resUart->err = reqUart->err;
+                                                    char* res = cmdUart.Print(resUart);
+                                                    uart_write_bytes(uart->uartNum, (const char*)res, strlen(res));
+                                                }
+                                            }
+                                            break;
+                                        default:
+                                            break;
+                                    }
+                                } else {
+                                    // ESP_LOGI("Debug", "cmdBasic.Parse Error... ");
+                                    resBasic->id = reqBasic->id;
+                                    resBasic->err = reqBasic->err;
+                                    char* res = cmdBasic.Print(resBasic);
+                                    uart_write_bytes(uart->uartNum, (const char*)res, strlen(res));
+                                }
+                                
+                                delete reqBasic;
+                                delete resBasic;
+
+                            } else {
+                                CmdError cmdError = CmdError();
+                                RESPONSE_BODY_ERROR* resError = new RESPONSE_BODY_ERROR();
+                                resError->err = "Illegal json.";
+                                char* res = cmdError.Print(resError);
+                                uart_write_bytes(uart->uartNum, (const char*) res, strlen(res));
+                            }
+
+                            bzero(dtmp, G_UART_BUFFER_SIZE);    // 清零接收数据
+                            len = 0;
                         }
                     }
                     break;

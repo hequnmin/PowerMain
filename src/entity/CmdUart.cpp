@@ -39,8 +39,11 @@ REQUEST_BODY_UART* CmdUart::Parse(const char* json) {
         data = cJSON_GetObjectItem(doc, "data");
         if (data != NULL) {
             char* datatmp = data->valuestring;
+            
             int len = ceil(1.0 * strlen(datatmp) / 2);
-            unsigned char* bytetmp = (unsigned char*)malloc(sizeof(unsigned char)*len);
+            int siz = sizeof(unsigned char)*len;
+            unsigned char* bytetmp = (unsigned char*)malloc(siz);
+            bzero(bytetmp, siz);
             ATE::hexToByte(datatmp, bytetmp, len);
             req->data = bytetmp;
             req->len = len;

@@ -50,6 +50,11 @@ namespace ATE
         const char* err = NULL;     // 错误信息
     };
 
+    // 异常应答结构体
+    struct RESPONSE_BODY_ERROR {
+        const char* err = NULL;     // 错误信息
+    };
+
     // <获取系统信息>请求结构体
     struct REQUEST_BODY_INFO : public REQUEST_BODY_BASIC {
         int chn;

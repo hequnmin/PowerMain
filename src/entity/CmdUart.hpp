@@ -2,6 +2,8 @@
 #define CMDUART_h
 #include "Global.hpp"
 #include "Command.hpp"
+#include "esp_log.h"
+
 using namespace ATE;
 
 class CmdUart
